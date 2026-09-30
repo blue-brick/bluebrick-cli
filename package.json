@@ -4,14 +4,19 @@
   "description": "Blue Brick CLI - scaffold Blue Brick products fast",
   "type": "module",
   "bin": {
-    "bluebrick": "./bin/bluebrick.js"
+    "bluebrick": "bin/bluebrick.js"
   },
   "files": [
     "bin",
     "src",
     "templates"
   ],
-  "keywords": ["bluebrick", "cli", "scaffold", "solana"],
+  "keywords": [
+    "bluebrick",
+    "cli",
+    "scaffold",
+    "solana"
+  ],
   "author": "Blue Brick <hello@bluebrick.fun>",
   "homepage": "https://bluebrick.fun",
   "repository": {
