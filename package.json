@@ -14,6 +14,13 @@
   "keywords": ["bluebrick", "cli", "scaffold", "solana"],
   "author": "Blue Brick <hello@bluebrick.fun>",
   "homepage": "https://bluebrick.fun",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blue-brick/bluebrick-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/blue-brick/bluebrick-cli/issues"
+  },
   "license": "MIT",
   "dependencies": {
     "@clack/prompts": "^1.8.1",
