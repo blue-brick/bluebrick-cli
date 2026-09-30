@@ -9,8 +9,20 @@ import pageRoutes from './src/routes/pages.js';
 const { ADMIN_PASSWORD, SESSION_SECRET, PORT = 3000, NODE_ENV } = process.env;
 const isProd = NODE_ENV === 'production';
 
-if (!ADMIN_PASSWORD || !SESSION_SECRET) {
-  console.error('Missing ADMIN_PASSWORD or SESSION_SECRET. Copy .env.example to .env and fill them in.');
+// Refuse to start with missing or placeholder secrets
+const PLACEHOLDERS = ['change-me', 'change-me-too'];
+const configErrors = [];
+
+if (!ADMIN_PASSWORD || PLACEHOLDERS.includes(ADMIN_PASSWORD) || ADMIN_PASSWORD.length < 8) {
+  configErrors.push('ADMIN_PASSWORD must be set to a real password (8+ characters), not the placeholder.');
+}
+if (!SESSION_SECRET || PLACEHOLDERS.includes(SESSION_SECRET) || SESSION_SECRET.length < 32) {
+  configErrors.push(
+    `SESSION_SECRET must be a random string of 32+ characters. Generate one with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+  );
+}
+if (configErrors.length > 0) {
+  console.error(`\nCannot start, fix your .env:\n- ${configErrors.join('\n- ')}\n`);
   process.exit(1);
 }
 

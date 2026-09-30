@@ -7,11 +7,10 @@ Stack: Node.js, Express 5, EJS, Tailwind CSS v4. Every page sits behind an admin
 ## Run it
 
 ```bash
-cp .env.example .env     # then edit ADMIN_PASSWORD and SESSION_SECRET
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open http://localhost:3000. The admin password and session secret are in `.env`, written by `bluebrick create`. Without one, copy `.env.example` to `.env` and replace both placeholders (the app refuses to start on placeholders).
 
 ## Production
 

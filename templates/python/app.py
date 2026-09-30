@@ -10,14 +10,25 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
-SESSION_SECRET = os.environ.get("SESSION_SECRET")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD") or ""
+SESSION_SECRET = os.environ.get("SESSION_SECRET") or ""
 IS_PROD = os.environ.get("APP_ENV") == "production"
 
-if not ADMIN_PASSWORD or not SESSION_SECRET:
-    raise SystemExit(
-        "Missing ADMIN_PASSWORD or SESSION_SECRET. Copy .env.example to .env and fill them in."
+# Refuse to start with missing or placeholder secrets
+PLACEHOLDERS = ("change-me", "change-me-too")
+config_errors = []
+
+if ADMIN_PASSWORD in PLACEHOLDERS or len(ADMIN_PASSWORD) < 8:
+    config_errors.append(
+        "ADMIN_PASSWORD must be set to a real password (8+ characters), not the placeholder."
     )
+if SESSION_SECRET in PLACEHOLDERS or len(SESSION_SECRET) < 32:
+    config_errors.append(
+        "SESSION_SECRET must be a random string of 32+ characters. "
+        'Generate one with: python3 -c "import secrets; print(secrets.token_hex(32))"'
+    )
+if config_errors:
+    raise SystemExit("\nCannot start, fix your .env:\n- " + "\n- ".join(config_errors) + "\n")
 
 app = Flask(__name__)
 app.config.update(

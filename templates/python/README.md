@@ -9,12 +9,11 @@ Stack: Python, Flask, Jinja, Tailwind CSS v4 (built with the Tailwind CLI from n
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env     # then edit ADMIN_PASSWORD and SESSION_SECRET
 npm install              # Tailwind CLI only
 npm run dev
 ```
 
-Open http://localhost:3000. Keep the venv active when you run `npm run dev`, since it starts Flask.
+Open http://localhost:3000. The admin password and session secret are in `.env`, written by `bluebrick create`. Without one, copy `.env.example` to `.env` and replace both placeholders (the app refuses to start on placeholders). Keep the venv active when you run `npm run dev`, since it starts Flask.
 
 ## Production
 

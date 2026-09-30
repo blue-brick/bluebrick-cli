@@ -1,4 +1,5 @@
 import * as p from '@clack/prompts';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +9,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = path.resolve(__dirname, '../../templates');
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
+// 8+ chars, no spaces, quotes, #, $ or backslashes (they break .env parsing)
+const PASSWORD_PATTERN = /^[A-Za-z0-9!@%^&*()_+=.,:;?~-]{8,}$/;
 
 const STACKS = {
   node: 'Node.js (Express + EJS + Tailwind)',
@@ -49,6 +52,20 @@ function copyTemplate(src, dest, name) {
       fs.copyFileSync(srcPath, destPath);
     }
   }
+}
+
+function writeEnv(target, adminPassword) {
+  const examplePath = path.join(target, '.env.example');
+  if (!fs.existsSync(examplePath)) return false;
+
+  const sessionSecret = crypto.randomBytes(32).toString('hex');
+  const content = fs
+    .readFileSync(examplePath, 'utf8')
+    .replace(/^ADMIN_PASSWORD=.*$/m, () => `ADMIN_PASSWORD=${adminPassword}`)
+    .replace(/^SESSION_SECRET=.*$/m, () => `SESSION_SECRET=${sessionSecret}`);
+
+  fs.writeFileSync(path.join(target, '.env'), content, { mode: 0o600 });
+  return true;
 }
 
 function run(cmd, args, cwd) {
@@ -99,25 +116,54 @@ export async function create(nameArg, opts) {
     cancelAndExit(`The "${template}" template isn't available yet.`);
   }
 
-  // 4. copy
+  // 4. admin password (empty = generate one; always generated when not in a terminal)
+  let adminPassword = '';
+  let generated = false;
+  if (process.stdin.isTTY) {
+    const answer = await p.password({
+      message: 'Admin password? (leave empty to generate one)',
+      validate: (v) =>
+        !v || PASSWORD_PATTERN.test(v)
+          ? undefined
+          : '8+ characters: letters, numbers and ! @ % ^ & * ( ) _ + = . , : ; ? ~ - only',
+    });
+    if (p.isCancel(answer)) cancelAndExit();
+    adminPassword = answer ?? '';
+  }
+  if (!adminPassword) {
+    adminPassword = crypto.randomBytes(12).toString('base64url');
+    generated = true;
+  }
+
+  // 5. copy + .env
   const s = p.spinner();
   s.start('Creating project');
   copyTemplate(src, target, name);
+  const envWritten = writeEnv(target, adminPassword);
   s.stop('Project created');
+  if (envWritten) p.log.success('Wrote .env with a random SESSION_SECRET');
 
-  // 5. git
+  // 6. git
   if (opts.git !== false) {
     if (run('git', ['init', '-q'], target)) p.log.success('Initialized git repository');
     else p.log.warn('Could not run git init');
   }
 
-  // 6. install (both templates ship a package.json: Express deps or the Tailwind CLI)
+  // 7. install (both templates ship a package.json: Express deps or the Tailwind CLI)
   if (opts.install !== false) {
     p.log.step('Installing dependencies');
     if (!run('npm', ['install'], target)) p.log.warn('npm install failed, run it manually');
   }
 
-  // 7. next steps
+  // 8. login details
+  if (generated) {
+    p.note(
+      `Admin password: ${adminPassword}\nSaved in .env. Change it there any time.`,
+      'Login'
+    );
+  }
+
+  // 9. next steps
   const steps = [`cd ${name}`];
 
   if (template === 'python') {
@@ -129,7 +175,7 @@ export async function create(nameArg, opts) {
 
   if (opts.install === false) steps.push('npm install');
 
-  steps.push('cp .env.example .env   # then set ADMIN_PASSWORD and SESSION_SECRET', 'npm run dev');
+  steps.push('npm run dev');
 
   p.note(steps.join('\n'), 'Next steps');
   p.outro('Build quietly. Launch loudly. 🚀');
