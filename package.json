@@ -1,0 +1,22 @@
+{
+  "name": "bluebrick",
+  "version": "0.0.1",
+  "description": "Blue Brick CLI - scaffold Blue Brick products fast",
+  "type": "module",
+  "bin": {
+    "bluebrick": "./bin/bluebrick.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "templates"
+  ],
+  "keywords": ["bluebrick", "cli", "scaffold", "solana"],
+  "author": "Blue Brick <hello@bluebrick.fun>",
+  "homepage": "https://bluebrick.fun",
+  "license": "MIT",
+  "dependencies": {
+    "@clack/prompts": "^1.8.1",
+    "commander": "^15.0.0"
+  }
+}
