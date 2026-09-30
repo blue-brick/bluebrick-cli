@@ -111,22 +111,25 @@ export async function create(nameArg, opts) {
     else p.log.warn('Could not run git init');
   }
 
-  // 6. install (node only for now)
-  if (template === 'node' && opts.install !== false) {
+  // 6. install (both templates ship a package.json: Express deps or the Tailwind CLI)
+  if (opts.install !== false) {
     p.log.step('Installing dependencies');
     if (!run('npm', ['install'], target)) p.log.warn('npm install failed, run it manually');
   }
 
   // 7. next steps
-  const steps =
-    template === 'node'
-      ? [`cd ${name}`, ...(opts.install === false ? ['npm install'] : []), 'npm run dev']
-      : [
-          `cd ${name}`,
-          'python3 -m venv .venv && source .venv/bin/activate',
-          'pip install -r requirements.txt',
-          'flask run',
-        ];
+  const steps = [`cd ${name}`];
+
+  if (template === 'python') {
+    steps.push(
+      'python3 -m venv .venv && source .venv/bin/activate',
+      'pip install -r requirements.txt'
+    );
+  }
+
+  if (opts.install === false) steps.push('npm install');
+
+  steps.push('cp .env.example .env   # then set ADMIN_PASSWORD and SESSION_SECRET', 'npm run dev');
 
   p.note(steps.join('\n'), 'Next steps');
   p.outro('Build quietly. Launch loudly. 🚀');

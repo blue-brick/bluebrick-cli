@@ -23,6 +23,6 @@ bluebrick create [name] [options]
 ## Templates
 
 - `node`: Express + EJS + Tailwind
-- `python`: coming soon
+- `python`: Flask + Jinja + Tailwind
 
 Built by [Blue Brick](https://bluebrick.fun).

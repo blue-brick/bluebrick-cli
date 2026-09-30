@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="mx-auto max-w-3xl p-6">
+  <header class="mb-8 flex items-center justify-between">
+    <h1 class="text-2xl font-bold">🧱 {{name}}</h1>
+    <form method="post" action="{{ url_for('logout') }}">
+      <button class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm hover:bg-slate-800">Log out</button>
+    </form>
+  </header>
+  <p class="text-slate-300">You're in. Start building in <code class="rounded bg-slate-800 px-1.5 py-0.5">app.py</code> and <code class="rounded bg-slate-800 px-1.5 py-0.5">templates/</code>.</p>
+</main>
+{% endblock %}
