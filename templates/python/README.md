@@ -27,3 +27,12 @@ Notes:
 - Sessions are signed cookies, so they survive restarts. Keep `SESSION_SECRET` private.
 - Set `APP_ENV=production` behind HTTPS so the session cookie is marked secure.
 - The login rate limit is per worker process.
+
+## Modules
+
+Add features with the Blue Brick CLI, from this folder:
+
+    bluebrick add            # list available modules
+    bluebrick add sqlite     # SQLite database with migrations
+
+Modules live in `modules/<name>/` and are loaded on startup, behind the admin password.

@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from modules import load_modules
+
 load_dotenv()
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD") or ""
@@ -135,3 +137,7 @@ def not_found(e):
 @app.errorhandler(500)
 def server_error(e):
     return render_template("500.html", title="Server error"), 500
+
+
+# Modules added with `bluebrick add <name>` register here, behind the admin password.
+load_modules(app)

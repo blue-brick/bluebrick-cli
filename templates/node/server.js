@@ -3,6 +3,7 @@ import path from 'node:path';
 import express from 'express';
 import session from 'express-session';
 import { requireAuth } from './src/middleware/auth.js';
+import { loadModules } from './src/modules/index.js';
 import authRoutes from './src/routes/auth.js';
 import pageRoutes from './src/routes/pages.js';
 
@@ -56,6 +57,9 @@ app.use(
 app.use(authRoutes);
 app.use(requireAuth);
 app.use(pageRoutes);
+
+// Modules added with `bluebrick add <name>` register here, behind the admin password.
+await loadModules(app);
 
 // 404
 app.use((req, res) => {

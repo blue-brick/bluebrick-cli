@@ -1,0 +1,28 @@
+{
+  "description": "SQLite database with automatic migrations",
+  "gitignore": ["data/"],
+  "node": {
+    "npm": ["better-sqlite3"],
+    "check": "better-sqlite3",
+    "usage": [
+      "import { db, getSetting, setSetting } from '../modules/sqlite/index.js';",
+      "",
+      "db is a better-sqlite3 connection (data/app.db).",
+      "Add tables by dropping numbered .sql files in migrations/ (0002_name.sql, ...).",
+      "They run in order on startup, once each. Keep data/ on a persistent disk in production."
+    ]
+  },
+  "python": {
+    "pip": [],
+    "usage": [
+      "from modules.sqlite import connect, get_setting, set_setting",
+      "",
+      "with connect() as conn:",
+      "    conn.execute('SELECT 1')",
+      "",
+      "The database is data/app.db. Add tables by dropping numbered .sql files in",
+      "migrations/ (0002_name.sql, ...). They run in order on startup, once each.",
+      "Keep data/ on a persistent disk in production."
+    ]
+  }
+}

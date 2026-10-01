@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { program } from 'commander';
 import { readFileSync } from 'node:fs';
+import { add } from '../src/commands/add.js';
 import { create } from '../src/commands/create.js';
 
 const pkg = JSON.parse(
@@ -19,5 +20,10 @@ program
   .option('--no-install', 'skip installing dependencies')
   .option('--no-git', 'skip git init')
   .action(create);
+
+program
+  .command('add [module]')
+  .description('Add a module to the current project (run without a name to list them)')
+  .action(add);
 
 program.parse();
