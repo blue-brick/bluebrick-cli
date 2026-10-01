@@ -5,11 +5,15 @@
   "scripts": {
     "dev": "concurrently -k -n server,css \"flask --app app run --debug --port 3000\" \"npm run dev:css\"",
     "dev:css": "tailwindcss -i ./src/styles/input.css -o ./static/styles.css --watch",
-    "build:css": "tailwindcss -i ./src/styles/input.css -o ./static/styles.css --minify"
+    "build:css": "tailwindcss -i ./src/styles/input.css -o ./static/styles.css --minify",
+    "prestart": "npm run build:css",
+    "start": "flask --app app run --port 3000"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.0",
+    "tailwindcss": "^4.1.0"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.1.0",
-    "concurrently": "^9.0.0",
-    "tailwindcss": "^4.1.0"
+    "concurrently": "^9.0.0"
   }
 }
