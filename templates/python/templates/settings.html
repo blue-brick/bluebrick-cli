@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="mx-auto max-w-3xl p-6">
+  <header class="mb-8 flex items-center justify-between">
+    <h1 class="text-2xl font-bold">⚙️ Settings</h1>
+    <a href="{{ url_for('index') }}" class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm hover:bg-slate-800">Back</a>
+  </header>
+
+  <section class="space-y-4 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+    <div>
+      <h2 class="text-lg font-semibold">Admin password</h2>
+      <p class="text-sm text-slate-400">
+        Last changed <time id="changed-at" datetime="{{ changed_at }}">{{ changed_at }}</time>.
+        Changing it signs out every other session. Locked out? Run
+        <code class="rounded bg-slate-800 px-1.5 py-0.5">bluebrick password</code> in the project folder.
+      </p>
+    </div>
+
+    {% if changed %}
+      <p class="rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400">Password changed. Other sessions were signed out.</p>
+    {% endif %}
+    {% if error %}
+      <p class="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">{{ error }}</p>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('change_password') }}" class="space-y-3">
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <input type="password" name="currentPassword" placeholder="Current password" required autocomplete="current-password"
+        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-blue-500">
+      <input type="password" id="newPassword" name="newPassword" placeholder="New password (8+ characters)" required minlength="8" maxlength="128" autocomplete="new-password"
+        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-blue-500">
+      <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Repeat new password" required minlength="8" maxlength="128" autocomplete="new-password"
+        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-blue-500">
+
+      <div id="generated" class="hidden rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm">
+        <p class="text-slate-400">Generated password. Copy it now: it is stored only as a hash and can't be shown again.</p>
+        <p class="mt-1 flex items-center gap-2">
+          <code id="generatedValue" class="select-all font-mono text-blue-400"></code>
+          <button type="button" id="copyBtn" class="rounded-lg border border-slate-700 px-2 py-1 text-xs hover:bg-slate-800">Copy</button>
+        </p>
+      </div>
+
+      <div class="flex gap-2">
+        <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 font-semibold hover:bg-blue-500">Change password</button>
+        <button type="button" id="generateBtn" class="rounded-lg border border-slate-700 px-4 py-2 hover:bg-slate-800">Generate random</button>
+      </div>
+    </form>
+
+    <p class="text-sm text-slate-400">
+      Don't remember your current password?
+      <a href="{{ url_for('forgot') }}" class="text-blue-400 hover:underline">Reset it with a code from the server</a>.
+    </p>
+  </section>
+</main>
+
+<script>
+  const stamp = document.getElementById('changed-at');
+  if (stamp && stamp.dateTime) stamp.textContent = new Date(stamp.dateTime).toLocaleString();
+
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  let generatedValue = '';
+
+  document.getElementById('generateBtn').addEventListener('click', () => {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    generatedValue = Array.from(bytes, (b) => alphabet[b & 63]).join('');
+    document.getElementById('newPassword').value = generatedValue;
+    document.getElementById('confirmPassword').value = generatedValue;
+    document.getElementById('generatedValue').textContent = generatedValue;
+    document.getElementById('generated').classList.remove('hidden');
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    if (generatedValue && navigator.clipboard) navigator.clipboard.writeText(generatedValue);
+  });
+</script>
+{% endblock %}

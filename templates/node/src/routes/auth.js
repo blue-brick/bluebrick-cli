@@ -1,39 +1,17 @@
-import crypto from 'node:crypto';
 import { Router } from 'express';
+import { checkPassword, getAuth } from '../auth/store.js';
+import { isAuthed } from '../middleware/auth.js';
+import { clearFailures, isBlocked, recordFailure } from '../security/rateLimit.js';
 
 const router = Router();
 
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 15 * 60 * 1000;
-const attempts = new Map(); // ip -> { count, resetAt }
-
-function isBlocked(ip) {
-  const entry = attempts.get(ip);
-  if (!entry) return false;
-  if (Date.now() > entry.resetAt) {
-    attempts.delete(ip);
-    return false;
-  }
-  return entry.count >= MAX_ATTEMPTS;
-}
-
-function recordFailure(ip) {
-  const entry = attempts.get(ip);
-  if (!entry || Date.now() > entry.resetAt) {
-    attempts.set(ip, { count: 1, resetAt: Date.now() + WINDOW_MS });
-  } else {
-    entry.count += 1;
-  }
-}
-
-function passwordMatches(input) {
-  const hash = (v) => crypto.createHash('sha256').update(String(v)).digest();
-  return crypto.timingSafeEqual(hash(input), hash(process.env.ADMIN_PASSWORD));
-}
-
 router.get('/login', (req, res) => {
-  if (req.session?.isAdmin) return res.redirect('/');
-  res.render('login', { title: 'Login', error: null });
+  if (isAuthed(req)) return res.redirect('/');
+  res.render('login', {
+    title: 'Login',
+    error: null,
+    notice: req.query.reset === '1' ? 'Password changed. Log in with the new one.' : null,
+  });
 });
 
 router.post('/login', (req, res, next) => {
@@ -46,16 +24,19 @@ router.post('/login', (req, res, next) => {
     });
   }
 
-  if (!passwordMatches(req.body.password ?? '')) {
+  if (!checkPassword(String(req.body?.password ?? ''))) {
     recordFailure(ip);
     return res.status(401).render('login', { title: 'Login', error: 'Wrong password.' });
   }
 
-  attempts.delete(ip);
+  clearFailures(ip);
+  const { version } = getAuth();
+
   // new session id after login
   req.session.regenerate((err) => {
     if (err) return next(err);
     req.session.isAdmin = true;
+    req.session.authVersion = version;
     req.session.save((err2) => {
       if (err2) return next(err2);
       res.redirect('/');

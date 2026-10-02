@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="flex min-h-screen items-center justify-center p-6">
+  <div class="w-full max-w-md space-y-4 rounded-2xl border border-slate-800 bg-slate-900 p-8">
+    <h1 class="text-2xl font-bold">🧱 Forgot password</h1>
+    <p class="text-sm text-slate-400">
+      No old password needed. You prove you own this server instead: create a one-time code,
+      read it on the server, and enter it below.
+    </p>
+
+    {% if error %}
+      <p class="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">{{ error }}</p>
+    {% endif %}
+    {% if info %}
+      <p class="rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400">{{ info }}</p>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('forgot_request') }}">
+      <button type="submit" class="w-full rounded-lg border border-slate-700 px-3 py-2 hover:bg-slate-800">1. Create a reset code</button>
+    </form>
+    <p class="text-xs text-slate-500">
+      The code is printed in the server log and saved in <code class="rounded bg-slate-800 px-1">data/reset.json</code>.
+      It works once and expires after 15 minutes.
+      {% if active %}A code is active right now.{% endif %}
+    </p>
+
+    <form method="post" action="{{ url_for('forgot_reset') }}" class="space-y-3">
+      <input name="code" placeholder="Reset code (XXXX-XXXX-XXXX-XXXX)" required autocomplete="off"
+        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 font-mono outline-none focus:border-blue-500">
+      <input type="password" name="newPassword" placeholder="New password (8+ characters)" required minlength="8" maxlength="128" autocomplete="new-password"
+        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-blue-500">
+      <input type="password" name="confirmPassword" placeholder="Repeat new password" required minlength="8" maxlength="128" autocomplete="new-password"
+        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-blue-500">
+      <button type="submit" class="w-full rounded-lg bg-blue-600 px-3 py-2 font-semibold hover:bg-blue-500">2. Set new password</button>
+    </form>
+
+    <a href="{{ url_for('login') }}" class="block text-center text-sm text-slate-400 hover:text-slate-200">Back to login</a>
+  </div>
+</main>
+{% endblock %}

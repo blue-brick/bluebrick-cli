@@ -32,3 +32,11 @@ Add features with the Blue Brick CLI, from this folder:
     bluebrick add sqlite     # SQLite database with migrations
 
 Modules live in `src/modules/<name>/` and are loaded on startup, behind the admin password.
+## Admin password
+
+The password in `.env` only seeds `data/auth.json` (a salted hash) on first start. After that, change it in **Settings**, or from the terminal:
+
+    bluebrick password              # prompts for a new password
+    bluebrick password --generate   # prints a random one, once
+
+Either way every other session is signed out. Keep `data/` on a persistent disk in production and never commit it.
