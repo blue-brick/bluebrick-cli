@@ -1,6 +1,6 @@
 {
   "name": "bluebrick",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Blue Brick CLI - scaffold Blue Brick products fast",
   "type": "module",
   "bin": {
