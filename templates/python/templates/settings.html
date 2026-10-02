@@ -51,6 +51,13 @@
       <a href="{{ url_for('forgot') }}" class="text-blue-400 hover:underline">Reset it with a code from the server</a>.
     </p>
   </section>
+
+  {% for section in sections %}
+    <section id="{{ section.id }}" class="mt-6 space-y-4 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+      <h2 class="text-lg font-semibold">{{ section.title }}</h2>
+      {{ section.html|safe }}
+    </section>
+  {% endfor %}
 </main>
 
 <script>

@@ -1,0 +1,123 @@
+<p class="text-sm text-slate-400">Choose where you are. Times shown by this site and its products use it.</p>
+
+{% if saved %}
+  <p class="rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400">Time zone saved.</p>
+{% endif %}
+{% if error %}
+  <p class="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">{{ error }}</p>
+{% endif %}
+
+<div class="rounded-xl border border-slate-700 bg-slate-950 p-4">
+  <p id="tz-clock" class="font-mono text-3xl">{{ preview.time }}</p>
+  <p id="tz-date" class="text-sm text-slate-400">{{ preview.date }}</p>
+  <p id="tz-label" class="mt-1 text-sm text-blue-400">{{ preview.summary }}</p>
+</div>
+
+<form id="tz-form" method="post" action="{{ url_for('timezone.save') }}" class="space-y-3">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+
+  <div class="flex gap-4 text-sm">
+    <label class="flex items-center gap-2"><input type="radio" name="mode" value="zone"> By country</label>
+    <label class="flex items-center gap-2"><input type="radio" name="mode" value="offset"> Fixed offset (GMT±)</label>
+  </div>
+
+  <div id="tz-zone-box" class="space-y-3">
+    <select id="tz-country" name="country"
+      class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-blue-500"></select>
+    <select id="tz-zone" name="zone"
+      class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-blue-500"></select>
+  </div>
+
+  <div id="tz-offset-box" class="hidden space-y-1">
+    <select id="tz-offset" name="offset"
+      class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-blue-500"></select>
+    <p class="text-xs text-slate-500">A fixed offset never changes for daylight saving. Pick a country instead if yours does.</p>
+  </div>
+
+  <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 font-semibold hover:bg-blue-500">Save time zone</button>
+</form>
+
+<script type="application/json" id="tz-data">{{ data|tojson }}</script>
+{% raw %}
+<script>
+  (() => {
+    const data = JSON.parse(document.getElementById('tz-data').textContent);
+    const form = document.getElementById('tz-form');
+    const country = document.getElementById('tz-country');
+    const zone = document.getElementById('tz-zone');
+    const offset = document.getElementById('tz-offset');
+    const zoneBox = document.getElementById('tz-zone-box');
+    const offsetBox = document.getElementById('tz-offset-box');
+    const clock = document.getElementById('tz-clock');
+    const dateEl = document.getElementById('tz-date');
+    const label = document.getElementById('tz-label');
+    let offsetMinutes = data.preview.offsetMinutes;
+
+    const mode = () => form.elements.mode.value;
+
+    country.add(new Option('Choose a country…', ''));
+    for (const c of data.countries) country.add(new Option(c.name, c.code));
+    for (const o of data.offsets) offset.add(new Option(o.label, String(o.minutes)));
+
+    function fillZones(code, selected) {
+      zone.innerHTML = '';
+      const entry = data.countries.find((c) => c.code === code);
+      const zones = entry ? entry.zones : [];
+      for (const z of zones) zone.add(new Option(z.replaceAll('_', ' '), z));
+      if (selected && zones.includes(selected)) zone.value = selected;
+    }
+
+    function syncMode() {
+      const isZone = mode() === 'zone';
+      zoneBox.classList.toggle('hidden', !isZone);
+      offsetBox.classList.toggle('hidden', isZone);
+    }
+
+    const dateFormat = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'UTC',
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    function tick() {
+      const shifted = new Date(Date.now() + offsetMinutes * 60000);
+      clock.textContent = shifted.toISOString().slice(11, 19);
+      dateEl.textContent = dateFormat.format(shifted);
+    }
+
+    async function preview() {
+      const params = new URLSearchParams({ mode: mode() });
+      if (mode() === 'zone') {
+        if (!zone.value) return;
+        params.set('zone', zone.value);
+      } else {
+        params.set('minutes', offset.value);
+      }
+      const res = await fetch('/settings/timezone/preview?' + params.toString());
+      if (!res.ok) return;
+      const info = await res.json();
+      offsetMinutes = info.offsetMinutes;
+      label.textContent = info.summary;
+      tick();
+    }
+
+    // start from the saved choice
+    form.elements.mode.value = data.current.mode;
+    country.value = data.current.country || '';
+    fillZones(data.current.country, data.current.zone);
+    if (data.current.mode === 'offset') offset.value = String(data.current.minutes);
+    syncMode();
+
+    form.addEventListener('change', (event) => {
+      if (event.target === country) fillZones(country.value);
+      if (event.target.name === 'mode') syncMode();
+      preview();
+    });
+
+    setInterval(tick, 1000);
+    tick();
+  })();
+</script>
+{% endraw %}

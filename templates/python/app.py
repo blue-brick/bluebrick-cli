@@ -1,6 +1,4 @@
-import hmac
 import os
-import secrets
 import time
 from datetime import timedelta
 
@@ -9,8 +7,10 @@ from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from auth_store import auth_exists, check_password, ensure_auth, get_auth, set_password
+from csrf import csrf_ok, csrf_token
 from modules import load_modules
 from reset_code import consume_reset_code, has_active_code, request_reset_code
+from settings_sections import render_settings_sections
 
 load_dotenv()
 
@@ -73,19 +73,6 @@ def record_failure(ip):
         attempts[ip] = [1, time.time() + WINDOW_SECONDS]
     else:
         entry[0] += 1
-
-
-# --- CSRF token for forms that change state (logged-in forms) ---
-def csrf_token():
-    if "csrf" not in session:
-        session["csrf"] = secrets.token_hex(24)
-    return session["csrf"]
-
-
-def csrf_ok():
-    sent = request.form.get("_csrf", "")
-    expected = session.get("csrf", "")
-    return bool(sent) and hmac.compare_digest(sent.encode(), expected.encode())
 
 
 # A session is only valid if it carries the current auth version,
@@ -216,6 +203,7 @@ def render_settings(error=None, status=200):
             changed=request.args.get("changed") == "1",
             changed_at=get_auth().get("changedAt", ""),
             csrf=csrf_token(),
+            sections=render_settings_sections(),
         ),
         status,
     )

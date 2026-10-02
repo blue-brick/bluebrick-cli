@@ -1,0 +1,25 @@
+{
+  "description": "Time zone setting (country and zone, or a fixed GMT offset) with a live clock in Settings",
+  "gitignore": ["data/"],
+  "node": {
+    "usage": [
+      "import { formatTime, getTimezone } from '../modules/timezone/index.js';",
+      "",
+      "formatTime(new Date())   // 3 Oct 2026, 18:30:00 in the chosen zone",
+      "getTimezone()            // { mode, country, zone, minutes }",
+      "",
+      "Set it in Settings > Time zone. Store timestamps in UTC and format them with formatTime()."
+    ]
+  },
+  "python": {
+    "pip": ["tzdata"],
+    "usage": [
+      "from modules.timezone import format_time, get_timezone",
+      "",
+      "format_time()            # 03 Oct 2026, 18:30:00 in the chosen zone",
+      "get_timezone()           # {'mode': ..., 'country': ..., 'zone': ..., 'minutes': ...}",
+      "",
+      "Set it in Settings > Time zone. Store timestamps in UTC and format them with format_time()."
+    ]
+  }
+}

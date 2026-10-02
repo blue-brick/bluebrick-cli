@@ -2,22 +2,24 @@ import { Router } from 'express';
 import { checkPassword, getAuth, setPassword } from '../auth/store.js';
 import { csrfToken, verifyCsrf } from '../middleware/csrf.js';
 import { clearFailures, isBlocked, recordFailure } from '../security/rateLimit.js';
+import { renderSettingsSections } from '../settings/sections.js';
 
 const router = Router();
 
-function renderSettings(req, res, { error = null, status = 200 } = {}) {
+async function renderSettings(req, res, { error = null, status = 200 } = {}) {
   res.status(status).render('settings', {
     title: 'Settings',
     error,
     changed: req.query.changed === '1',
     changedAt: getAuth().changedAt || '',
     csrf: csrfToken(req),
+    sections: await renderSettingsSections(req, res),
   });
 }
 
 router.get('/settings', (req, res) => renderSettings(req, res));
 
-router.post('/settings/password', verifyCsrf, (req, res, next) => {
+router.post('/settings/password', verifyCsrf, async (req, res, next) => {
   const ip = req.ip;
 
   if (isBlocked(ip)) {

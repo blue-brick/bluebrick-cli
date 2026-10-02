@@ -26,8 +26,10 @@ Both include an admin login, a Settings page to change the password, and a forgo
 
     cd my-app
     bluebrick add sqlite
+    bluebrick add timezone
 
 - `sqlite`: SQLite database with automatic migrations
+- `timezone`: choose a country and time zone (or a fixed GMT offset) in Settings, with a live clock. Your code formats times with `formatTime()` (Node) or `format_time()` (Python)
 
 ## Forgot the admin password?
 
