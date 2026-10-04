@@ -22,8 +22,20 @@ import {
 } from '../lib/license.js';
 import { PASSWORD_PATTERN, writeEnv } from '../lib/scaffold.js';
 
+// Buyers run products on their own server, so the generated .env switches to production mode.
+// The templates only mark the session cookie Secure when the request is HTTPS, so login still
+// works over plain HTTP while testing. Products without these lines are left untouched.
+function setProduction(target) {
+  const envPath = path.join(target, '.env');
+  const content = readFileSync(envPath, 'utf8')
+    .replace(/^NODE_ENV=.*$/m, 'NODE_ENV=production')
+    .replace(/^APP_ENV=.*$/m, 'APP_ENV=production');
+  writeFileSync(envPath, content);
+}
+
 // Creates .env from .env.example (random SESSION_SECRET + admin password),
-// the same way `bluebrick create` does. Skips products without .env.example.
+// the same way `bluebrick create` does, then sets production mode.
+// Skips products without .env.example.
 async function setupEnv(target) {
   if (!existsSync(path.join(target, '.env.example'))) return null;
   if (existsSync(path.join(target, '.env'))) return null;
@@ -51,7 +63,8 @@ async function setupEnv(target) {
   }
 
   writeEnv(target, adminPassword);
-  p.log.success('Wrote .env with a random SESSION_SECRET');
+  setProduction(target);
+  p.log.success('Wrote .env (production mode) with a random SESSION_SECRET');
   return { generated, adminPassword };
 }
 

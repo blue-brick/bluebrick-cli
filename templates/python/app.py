@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, session, url_for
+from flask.sessions import SecureCookieSessionInterface
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from auth_store import auth_exists, check_password, ensure_auth, get_auth, set_password
@@ -37,17 +38,29 @@ if config_errors:
 
 ensure_auth(ADMIN_PASSWORD)
 
+
+class AutoSecureSessionInterface(SecureCookieSessionInterface):
+    """Mark the session cookie Secure only when the request arrived over HTTPS.
+
+    In production a request counts as HTTPS when the reverse proxy says so (ProxyFix reads
+    X-Forwarded-Proto). Plain HTTP still works, so a first test on http://ip:port can log in.
+    """
+
+    def get_cookie_secure(self, app):
+        return IS_PROD and request.is_secure
+
+
 app = Flask(__name__)
 app.config.update(
     SECRET_KEY=SESSION_SECRET,
     SESSION_COOKIE_NAME="bb.sid",
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=IS_PROD,
     PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
 )
+app.session_interface = AutoSecureSessionInterface()
 
-# CloudPanel / nginx sits in front in production
+# In production a reverse proxy (nginx, Caddy, a control panel) usually sits in front
 if IS_PROD:
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 

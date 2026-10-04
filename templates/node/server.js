@@ -38,7 +38,8 @@ const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(import.meta.dirname, 'views'));
 
-// CloudPanel / nginx sits in front in production
+// In production a reverse proxy (nginx, Caddy, a control panel) usually sits in front and
+// terminates HTTPS, so trust its X-Forwarded-* headers.
 if (isProd) app.set('trust proxy', 1);
 
 app.use(express.urlencoded({ extended: false }));
@@ -53,7 +54,9 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: isProd,
+      // 'auto' marks the cookie Secure whenever the request arrived over HTTPS (directly or
+      // through the proxy), and still lets login work over plain HTTP during a first test.
+      secure: isProd ? 'auto' : false,
       maxAge: 1000 * 60 * 60 * 8, // 8 hours
     },
   })

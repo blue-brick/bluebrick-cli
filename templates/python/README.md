@@ -25,7 +25,9 @@ APP_ENV=production gunicorn -w 2 -b 127.0.0.1:8000 app:app
 
 Notes:
 - Sessions are signed cookies, so they survive restarts. Keep `SESSION_SECRET` private.
-- Set `APP_ENV=production` behind HTTPS so the session cookie is marked secure.
+- `APP_ENV=production` marks the session cookie Secure whenever the request arrives over HTTPS, so login works through an HTTPS reverse proxy and still works over plain HTTP while you test.
+- Production mode also trusts the proxy's `X-Forwarded-*` headers. Keep the app's port closed to the internet and reach it only through your proxy (the gunicorn command above already binds to 127.0.0.1).
+- Products installed with `bluebrick activate` already have `APP_ENV=production` in `.env`.
 - The login rate limit is per worker process.
 
 ## Modules
@@ -36,6 +38,7 @@ Add features with the Blue Brick CLI, from this folder:
     bluebrick add sqlite     # SQLite database with migrations
 
 Modules live in `modules/<name>/` and are loaded on startup, behind the admin password.
+
 ## Admin password
 
 The password in `.env` only seeds `data/auth.json` (a salted hash) on first start. After that, change it in **Settings**, or from the terminal:
