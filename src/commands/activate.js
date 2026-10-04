@@ -1,6 +1,14 @@
 import * as p from '@clack/prompts';
+import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
@@ -12,6 +20,49 @@ import {
   serverUrl,
   writeLicense,
 } from '../lib/license.js';
+import { PASSWORD_PATTERN, writeEnv } from '../lib/scaffold.js';
+
+// Creates .env from .env.example (random SESSION_SECRET + admin password),
+// the same way `bluebrick create` does. Skips products without .env.example.
+async function setupEnv(target) {
+  if (!existsSync(path.join(target, '.env.example'))) return null;
+  if (existsSync(path.join(target, '.env'))) return null;
+
+  let adminPassword = '';
+  let generated = false;
+
+  if (process.stdin.isTTY) {
+    const answer = await p.password({
+      message: 'Admin password? (leave empty to generate one)',
+      validate: (v) =>
+        !v || PASSWORD_PATTERN.test(v)
+          ? undefined
+          : '8+ characters: letters, numbers and ! @ % ^ & * ( ) _ + = . , : ; ? ~ - only',
+    });
+    if (p.isCancel(answer)) {
+      p.log.warn('Skipped. Create a .env from .env.example before starting.');
+      return null;
+    }
+    adminPassword = answer ?? '';
+  }
+  if (!adminPassword) {
+    adminPassword = crypto.randomBytes(12).toString('base64url');
+    generated = true;
+  }
+
+  writeEnv(target, adminPassword);
+  p.log.success('Wrote .env with a random SESSION_SECRET');
+  return { generated, adminPassword };
+}
+
+function hasStartScript(target) {
+  try {
+    const pkg = JSON.parse(readFileSync(path.join(target, 'package.json'), 'utf8'));
+    return Boolean(pkg.scripts && pkg.scripts.start);
+  } catch {
+    return false;
+  }
+}
 
 export async function activateCommand(keyArg, dirArg, opts = {}) {
   p.intro('Blue Brick activate');
@@ -101,7 +152,10 @@ export async function activateCommand(keyArg, dirArg, opts = {}) {
   });
   s.stop(`Installed ${data.product} ${version}`);
 
-  if (opts.install !== false && existsSync(path.join(target, 'package.json'))) {
+  const env = await setupEnv(target);
+
+  const hasPackage = existsSync(path.join(target, 'package.json'));
+  if (opts.install !== false && hasPackage) {
     p.log.step('Installing dependencies');
     const r = spawnSync('npm', ['install'], {
       cwd: target,
@@ -113,6 +167,16 @@ export async function activateCommand(keyArg, dirArg, opts = {}) {
     }
   }
 
+  if (env && env.generated) {
+    p.note(
+      `Admin password: ${env.adminPassword}\nSaved in .env. Change it in Settings or with: bluebrick password`,
+      'Login'
+    );
+  }
+
   const rel = path.relative(process.cwd(), target) || '.';
-  p.outro(`Done. Next: cd ${rel}`);
+  const steps = [`cd ${rel}`];
+  if (opts.install === false && hasPackage) steps.push('npm install');
+  if (hasStartScript(target)) steps.push('npm start');
+  p.outro(`Done. Next: ${steps.join(' && ')}`);
 }

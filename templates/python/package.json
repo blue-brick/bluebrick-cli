@@ -11,8 +11,8 @@
     "start:prod": "npm run build:css && gunicorn app:app -b 127.0.0.1:3000"
   },
   "dependencies": {
-    "@tailwindcss/cli": "^4.1.0",
-    "tailwindcss": "^4.1.0"
+    "@tailwindcss/cli": "4.3.0",
+    "tailwindcss": "4.3.0"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
