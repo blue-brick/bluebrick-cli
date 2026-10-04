@@ -3,6 +3,7 @@
   "gitignore": ["data/"],
   "node": {
     "npm": ["better-sqlite3"],
+    "allowScripts": ["better-sqlite3"],
     "check": "better-sqlite3",
     "usage": [
       "import { db, getSetting, setSetting } from '../modules/sqlite/index.js';",

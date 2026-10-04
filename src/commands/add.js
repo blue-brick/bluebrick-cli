@@ -55,6 +55,36 @@ function appendMissingLines(file, lines, matches) {
   return missing;
 }
 
+// npm's allowScripts policy (npm 11.16+) lets a project say which dependencies may run
+// install scripts. Writes a name-only approval for each package that has no entry yet.
+// A package that already has any entry (pinned, approved or denied) is left alone, so a
+// denial is never overridden. Older npm versions ignore the field.
+function allowInstallScripts(cwd, names) {
+  const file = path.join(cwd, 'package.json');
+  if (!names || names.length === 0 || !fs.existsSync(file)) return [];
+
+  let pkg;
+  try {
+    pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return [];
+  }
+
+  const policy = pkg.allowScripts && typeof pkg.allowScripts === 'object' ? pkg.allowScripts : {};
+  const added = [];
+  for (const name of names) {
+    const covered = Object.keys(policy).some((key) => key === name || key.startsWith(`${name}@`));
+    if (covered) continue;
+    policy[name] = true;
+    added.push(name);
+  }
+  if (added.length === 0) return [];
+
+  pkg.allowScripts = policy;
+  fs.writeFileSync(file, JSON.stringify(pkg, null, 2) + '\n');
+  return added;
+}
+
 export async function add(moduleName) {
   p.intro('🧱 Blue Brick');
 
@@ -110,6 +140,12 @@ export async function add(moduleName) {
   if (ignored.length > 0) p.log.success(`Added to .gitignore: ${ignored.join(', ')}`);
 
   const stackMeta = meta[stack] ?? {};
+
+  // Install-script approvals go in first, so the install below runs with them in place
+  if (stack === 'node') {
+    const allowed = allowInstallScripts(cwd, stackMeta.allowScripts);
+    if (allowed.length > 0) p.log.success(`Allowed install scripts in package.json: ${allowed.join(', ')}`);
+  }
 
   // Dependencies
   if (stack === 'node' && stackMeta.npm?.length > 0) {
